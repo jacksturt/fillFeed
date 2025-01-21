@@ -1,0 +1,12 @@
+{
+    "build": {
+        "builder": "NIXPACKS",
+        "buildCommand": "yarn install",
+        "nixpacksConfigPath": "nixpacks.toml"
+    },
+    "deploy": {
+        "startCommand": "yarn start",
+        "healthcheckPath": "/metrics",
+        "healthcheckTimeout": 100
+    }
+}
