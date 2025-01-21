@@ -1,6 +1,6 @@
 [phases.setup]
-nixPkgs = ['nodejs_20', 'yarn']
-aptPkgs = ['git']
+nixPkgs = ['nodejs_20', 'yarn', 'python3', 'gcc', 'g++', 'make']
+aptPkgs = ['git', 'python3', 'build-essential']
 env = ['NODE_VERSION=20.18.0']
 
 [phases.install]
