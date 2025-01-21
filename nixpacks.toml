@@ -1,10 +1,10 @@
 [phases.setup]
-nixPkgs = ['nodejs_20', 'yarn', 'python3', 'gcc', 'g++', 'make']
-aptPkgs = ['git', 'python3', 'build-essential']
-env = ['NODE_VERSION=20.18.0']
+nixPkgs = ["nodejs_20", "yarn", "python3", "gcc", "g++", "make"]
+aptPkgs = ["git", "python3", "build-essential"]
+env = ["NODE_VERSION=20.18.0"]
 
 [phases.install]
-cmds = ['yarn install']
+cmds = ["yarn install"]
 
 [start]
-cmd = 'yarn start'
+cmd = "yarn start"
