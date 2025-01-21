@@ -5,8 +5,6 @@
         "nixpacksConfigPath": "nixpacks.toml"
     },
     "deploy": {
-        "startCommand": "yarn start",
-        "healthcheckPath": "/metrics",
-        "healthcheckTimeout": 100
+        "startCommand": "yarn start"
     }
 }

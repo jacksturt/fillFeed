@@ -7,7 +7,6 @@ import express from "express";
 import promBundle from "express-prom-bundle";
 export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
-const RPC_URL = "https://devnet.helius-rpc.com/?api-key=d4943793-a5a1-4d4e-872c-1cdd2a0267f2";
 
 
 
