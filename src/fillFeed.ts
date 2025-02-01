@@ -138,6 +138,10 @@ export class FillFeed {
           "https://player-markets.vercel.app/api/cron/checkOrdersAndFills",
           {
             method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + process.env.PLAYER_MARKETS_API_KEY,
+            },
           }
         );
         const data = await response.json();
