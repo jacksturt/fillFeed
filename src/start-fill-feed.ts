@@ -8,10 +8,7 @@ import promBundle from "express-prom-bundle";
 export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
-
-
-const rpcUrl =
-  "https://devnet.helius-rpc.com/?api-key=d4943793-a5a1-4d4e-872c-1cdd2a0267f2";
+const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL;
 
 const monitorFeed = async (feed: FillFeed) => {
   // 5 minutes
@@ -22,7 +19,9 @@ const monitorFeed = async (feed: FillFeed) => {
     const msSinceUpdate = feed.msSinceLastUpdate();
     if (msSinceUpdate > deadThreshold) {
       throw new Error(
-        `fillFeed has had no updates since ${deadThreshold / 1_000} seconds ago.`
+        `fillFeed has had no updates since ${
+          deadThreshold / 1_000
+        } seconds ago.`
       );
     }
   }
@@ -54,6 +53,9 @@ const run = async () => {
 
   console.log("starting feed...");
   let feed: FillFeed | null = null;
+  if (!rpcUrl) {
+    throw new Error("NEXT_PUBLIC_RPC_URL is not set");
+  }
   while (true) {
     try {
       console.log("setting up connection...");
