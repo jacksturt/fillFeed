@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { Connection, ConfirmedSignatureInfo } from "@solana/web3.js";
+import { Connection, ConfirmedSignatureInfo, PublicKey } from "@solana/web3.js";
 
 import { FillLog } from "@cks-systems/manifest-sdk/client/ts/src/manifest/accounts/FillLog";
 import {
@@ -60,7 +60,7 @@ export class FillFeed {
   private ended: boolean = false;
   private lastUpdateUnix: number = Date.now();
   private processingSignatures: Set<string> = new Set();
-
+  private marketAddresses: string[] = [];
   constructor(private connection: Connection) {
     this.wss = new WebSocket.Server({ port: 1234 });
 
@@ -104,6 +104,24 @@ export class FillFeed {
    * Parse logs in an endless loop.
    */
   public async parseLogs(endEarly?: boolean) {
+    try {
+      const response = await fetch(
+        "https://player-markets.vercel.app/api/db/markets/getAddresses",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${process.env.CRON_SECRET}`,
+          },
+        }
+      );
+      const data = await response.json();
+      this.marketAddresses = data;
+      console.log("marketAddresses", this.marketAddresses);
+    } catch (error) {
+      console.error(error);
+    }
+    for (const marketAddress of this.marketAddresses) {
+    }
     const lastSignatureStatus = (
       await this.connection.getSignaturesForAddress(
         PROGRAM_ID,
@@ -120,34 +138,48 @@ export class FillFeed {
 
     while (!this.shouldEnd && new Date(Date.now()) < endTime) {
       await new Promise((f) => setTimeout(f, 10_000));
-      const signatures: ConfirmedSignatureInfo[] =
-        await this.connection.getSignaturesForAddress(
-          PROGRAM_ID,
-          {
-            until: lastSignature,
-          },
-          "finalized"
-        );
+      const signatures: ConfirmedSignatureInfo[] = [];
+      const marketsToCheck: string[] = [];
+
+      const getSignaturesPromise = this.marketAddresses.map(
+        async (marketAddress) => {
+          const marketSignatures =
+            await this.connection.getSignaturesForAddress(
+              new PublicKey(marketAddress),
+              {
+                until: lastSignature,
+              },
+              "finalized"
+            );
+          if (marketSignatures.length > 0) {
+            marketsToCheck.push(marketAddress);
+          }
+          signatures.push(...marketSignatures);
+        }
+      );
+      await Promise.all(getSignaturesPromise);
+      console.log("marketsToCheck", marketsToCheck);
+      console.log("signatures", signatures);
+      for (const marketAddress of marketsToCheck) {
+        try {
+          const response = await fetch(
+            `https://player-markets.vercel.app/api/cron/checkOrdersAndFills?marketAddress=${marketAddress}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${process.env.CRON_SECRET}`,
+              },
+            }
+          );
+          const data = await response.json();
+          console.log("checkOrdersAndFills", data);
+        } catch (error) {
+          console.error(error);
+        }
+      }
       signatures.reverse();
       if (signatures.length < 1) {
         continue;
-      }
-
-      try {
-        const response = await fetch(
-          "https://player-markets.vercel.app/api/cron/checkOrdersAndFills",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + process.env.PLAYER_MARKETS_API_KEY,
-            },
-          }
-        );
-        const data = await response.json();
-        console.log("checkOrdersAndFills", data);
-      } catch (error) {
-        console.error(error);
       }
 
       for (const signature of signatures) {
@@ -187,7 +219,6 @@ export class FillFeed {
     this.wss.close();
     this.ended = true;
   }
-
   /**
    * Handle a signature by fetching the tx onchain and possibly sending a fill
    * notification.
