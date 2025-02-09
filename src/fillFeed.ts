@@ -143,6 +143,8 @@ export class FillFeed {
 
       const getSignaturesPromise = this.marketAddresses.map(
         async (marketAddress) => {
+          await new Promise((f) => setTimeout(f, 1000));
+
           const marketSignatures =
             await this.connection.getSignaturesForAddress(
               new PublicKey(marketAddress),
